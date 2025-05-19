@@ -14,6 +14,7 @@ const (
 
 var cfg *config.Config
 
+// rootCmd is a top-level command
 var rootCmd = &cobra.Command{
 	Use:   "oiler-cli",
 	Short: "CLI for Oiler Kubernetes Operator",
@@ -23,12 +24,14 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+// Execute executes incoming command
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("Error while executing command: %v", err)
 	}
 }
 
+// init is a default function to register commands.
 func init() {
 	var err error
 	cfg, err = config.LoadConfig()
@@ -43,6 +46,7 @@ func init() {
 	backupCmd.AddCommand(backupCreateCmd)
 	backupCmd.AddCommand(backupDeleteCmd)
 	backupCmd.AddCommand(backupUpdateCmd)
+	setupFlags()
 
 	adapterCmd.AddCommand(adapterAddCmd)
 	adapterCmd.AddCommand(adapterDeleteCmd)

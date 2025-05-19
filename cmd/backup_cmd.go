@@ -20,12 +20,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// backupCmd is a top-level command for actions with BackupRequest.
 var backupCmd = &cobra.Command{
 	Use:   "backup",
 	Short: "Manage backup resources",
 	Long:  `Manage backup resources in the cluster.`,
 }
 
+// backupListCmd lists all BackupRequest instances.
 var backupListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all BackupRequest resources",
@@ -93,6 +95,7 @@ var (
 	backupRequestName string
 )
 
+// backupCreateCmd creates BackupRequest instance.
 var backupCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a BackupRequest",
@@ -236,6 +239,7 @@ var backupCreateCmd = &cobra.Command{
 	},
 }
 
+// backupDeleteCmd deletes BackupRequest.
 var backupDeleteCmd = &cobra.Command{
 	Use:   "delete <name>",
 	Short: "Delete a BackupRequest",
@@ -264,6 +268,7 @@ var backupDeleteCmd = &cobra.Command{
 	},
 }
 
+// backupUpdateCmd updates existing BackupRequest.
 var backupUpdateCmd = &cobra.Command{
 	Use:   "update <name> <field>=<value>",
 	Short: "Update a field in a BackupRequest",

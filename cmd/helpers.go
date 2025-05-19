@@ -20,6 +20,7 @@ var (
 	}
 )
 
+// getConfig returns configuration.
 func getConfig() (*rest.Config, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -31,6 +32,7 @@ func getConfig() (*rest.Config, error) {
 	return config, nil
 }
 
+// getClientSet returns clientset.
 func getClientSet() (*kubernetes.Clientset, error) {
 	config, err := getConfig()
 	if err != nil {
@@ -44,6 +46,7 @@ func getClientSet() (*kubernetes.Clientset, error) {
 	return clientset, nil
 }
 
+// getDynamicClient returns dynamicClient.
 func getDynamicClient() (*dynamic.DynamicClient, error) {
 	config, err := getConfig()
 	if err != nil {
@@ -58,6 +61,8 @@ func getDynamicClient() (*dynamic.DynamicClient, error) {
 	return dynClient, nil
 }
 
+// startSpinner starts spinner to brighten the wait up.
+// Useless but funny.
 func startSpinner(text string) func() {
 	s := spinner.New([]string{".", "..", "..."}, 500*time.Millisecond)
 	s.Prefix = text

@@ -13,12 +13,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// adapterCmd is a top-level command for actions with adapters ConfigMap.
 var adapterCmd = &cobra.Command{
 	Use:   "adapter",
 	Short: "Manage adapters",
 	Long:  `Manage adapters in the cluster.`,
 }
 
+// adapterAddCmd adds new adapter to ConfigMap.
 var adapterAddCmd = &cobra.Command{
 	Use:   "add <name>=<url>",
 	Short: "Add an adapter to the ConfigMap",
@@ -77,6 +79,7 @@ var adapterAddCmd = &cobra.Command{
 	},
 }
 
+// adapterDeleteCmd deletes existing adapter from ConfigMap.
 var adapterDeleteCmd = &cobra.Command{
 	Use:   "delete <name>",
 	Short: "Delete an adapter from the ConfigMap",
@@ -117,6 +120,7 @@ var adapterDeleteCmd = &cobra.Command{
 	},
 }
 
+// adapterListCmd lists all active adapters.
 var adapterListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all adapters from the ConfigMap",
