@@ -27,9 +27,11 @@ var configSetCmd = &cobra.Command{
 	Long:  `Set a configuration parameter in the config file.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		stopFn := startSpinner("[1/2] Preparing")
 		arg := args[0]
 		parts := strings.SplitN(arg, "=", 2)
 		if len(parts) != 2 {
+			stopFn()
 			log.Fatalf("Invalid argument format. Use <parameter>=<value>")
 		}
 
@@ -39,10 +41,12 @@ var configSetCmd = &cobra.Command{
 		configPath := filepath.Join(os.Getenv("HOME"), ".oiler", ".config.json")
 		configData, err := os.ReadFile(configPath)
 		if err != nil {
+			stopFn()
 			log.Fatalf("Failed to read config file: %v", err)
 		}
 
 		if err := json.Unmarshal(configData, &cfg); err != nil {
+			stopFn()
 			log.Fatalf("Failed to unmarshal config: %v", err)
 		}
 
@@ -52,18 +56,24 @@ var configSetCmd = &cobra.Command{
 		case "namespace":
 			cfg.Namespace = value
 		default:
+			stopFn()
 			log.Fatalf("Unknown parameter: %s", parameter)
 		}
+		stopFn()
 
+		stopFn = startSpinner("[2/2] Writing result")
 		configData, err = json.MarshalIndent(cfg, "", "  ")
 		if err != nil {
+			stopFn()
 			log.Fatalf("Failed to marshal config: %v", err)
 		}
 
 		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			stopFn()
 			log.Fatalf("Failed to write config file: %v", err)
 		}
 
+		stopFn()
 		fmt.Printf("Updated config: %+v\n", cfg)
 	},
 }

@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"time"
+
+	"github.com/briandowns/spinner"
 	backupv1 "github.com/oiler-backup/core/core/api/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -53,4 +56,12 @@ func getDynamicClient() (*dynamic.DynamicClient, error) {
 	}
 
 	return dynClient, nil
+}
+
+func startSpinner(text string) func() {
+	s := spinner.New([]string{".", "..", "..."}, 500*time.Millisecond)
+	s.Prefix = text
+	s.Start()
+
+	return s.Stop
 }

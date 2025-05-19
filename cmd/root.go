@@ -38,8 +38,8 @@ func init() {
 
 	configCmd.AddCommand(configGetCmd)
 	configCmd.AddCommand(configSetCmd)
-	backupCmd.AddCommand(backupListCmd)
 
+	backupCmd.AddCommand(backupListCmd)
 	backupCmd.AddCommand(backupCreateCmd)
 	backupCmd.AddCommand(backupDeleteCmd)
 	backupCmd.AddCommand(backupUpdateCmd)
