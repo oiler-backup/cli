@@ -10,6 +10,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
+// GetClient returns Clientset based on kubeconfig file.
 func GetClient(kubeConfigPath string) (*kubernetes.Clientset, error) {
 	if kubeConfigPath == "" {
 		if home := homedir.HomeDir(); home != "" {
@@ -22,18 +23,19 @@ func GetClient(kubeConfigPath string) (*kubernetes.Clientset, error) {
 	// Use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 	if err != nil {
-		return nil, fmt.Errorf("error building kubeconfig: %w", err)
+		return nil, fmt.Errorf("error building kubeconfig: %v", err)
 	}
 
 	// Create a new clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, fmt.Errorf("error creating clientset: %w", err)
+		return nil, fmt.Errorf("error creating clientset: %v", err)
 	}
 
 	return clientset, nil
 }
 
+// GetCustomResourceClient returns client to work with CustomResources.
 func GetCustomResourceClient(kubeConfigPath, groupVersion, resource string) (rest.Interface, error) {
 	if kubeConfigPath == "" {
 		if home := homedir.HomeDir(); home != "" {
@@ -46,13 +48,13 @@ func GetCustomResourceClient(kubeConfigPath, groupVersion, resource string) (res
 	// Use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 	if err != nil {
-		return nil, fmt.Errorf("error building kubeconfig: %w", err)
+		return nil, fmt.Errorf("error building kubeconfig: %v", err)
 	}
 
 	// Create a REST client
 	restClient, err := rest.RESTClientFor(config)
 	if err != nil {
-		return nil, fmt.Errorf("error creating REST client: %w", err)
+		return nil, fmt.Errorf("error creating REST client: %v", err)
 	}
 
 	return restClient, nil

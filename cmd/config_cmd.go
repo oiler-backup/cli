@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// configCmd is top-level command for actions with configuration.
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Display the current configuration",
@@ -21,6 +22,7 @@ var configCmd = &cobra.Command{
 	},
 }
 
+// configSetCmd sets parameters to config.
 var configSetCmd = &cobra.Command{
 	Use:   "set <parameter>=<value>",
 	Short: "Set a configuration parameter",
@@ -78,6 +80,7 @@ var configSetCmd = &cobra.Command{
 	},
 }
 
+// configGetCmd shows current configuration.
 var configGetCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Display the current configuration",

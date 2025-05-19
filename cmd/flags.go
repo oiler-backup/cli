@@ -1,5 +1,6 @@
 package cmd
 
+// setupFlags sets flags up
 func setupFlags() {
 	backupCreateCmd.Flags().StringVar(&db, "db", "", "DB specification in the format dbType@dbUri:dbPort/dbName")
 	backupCreateCmd.Flags().StringVar(&dbUser, "db-user", "", "DB user")

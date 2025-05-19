@@ -8,11 +8,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+// A Config stores configuration.
 type Config struct {
 	KubeConfigPath string `mapstructure:"kube_config_path" json:"kube_config_path"`
 	Namespace      string `mapstructure:"namespace" json:"namespace"`
 }
 
+// LoadConfig reads configuration file and fills Config up.
 func LoadConfig() (*Config, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
