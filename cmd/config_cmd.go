@@ -2,12 +2,11 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 )
 
@@ -16,10 +15,6 @@ var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Display the current configuration",
 	Long:  `Display the current configuration loaded from the config file or flags.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("KubeConfig Path: %s\n", cfg.KubeConfigPath)
-		fmt.Printf("Namespace: %s\n", cfg.Namespace)
-	},
 }
 
 // configSetCmd sets parameters to config.
@@ -76,7 +71,7 @@ var configSetCmd = &cobra.Command{
 		}
 
 		stopFn()
-		fmt.Printf("Updated config: %+v\n", cfg)
+		log.Info("Successfully updated config")
 	},
 }
 
@@ -86,7 +81,13 @@ var configGetCmd = &cobra.Command{
 	Short: "Display the current configuration",
 	Long:  `Display the current configuration loaded from the config file or flags.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("KubeConfig Path: %s\n", cfg.KubeConfigPath)
-		fmt.Printf("Namespace: %s\n", cfg.Namespace)
+		t := table.NewWriter()
+		t.SetOutputMirror(os.Stdout)
+		t.SetStyle(table.StyleLight)
+		t.AppendHeader(table.Row{"#", "Parameter Name", "Value"})
+		t.AppendRow(table.Row{1, "kube_config_path", cfg.KubeConfigPath})
+		t.AppendSeparator()
+		t.AppendRow(table.Row{2, "namespace", cfg.Namespace})
+		t.Render()
 	},
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -235,7 +234,7 @@ var backupCreateCmd = &cobra.Command{
 			log.Fatalf("Failed to create BackupRequest resource: %v", err)
 		}
 		stopFn()
-		fmt.Printf("BackupRequest '%s' created successfully\n", backupRequestName)
+		log.Infof("Successfully created BackupRequest %s", backupRequestName)
 	},
 }
 
@@ -264,7 +263,7 @@ var backupDeleteCmd = &cobra.Command{
 		}
 
 		stopFn()
-		fmt.Printf("BackupRequest '%s' deleted successfully\n", name)
+		log.Infof("Successfully deleted BackupRequest %s", backupRequestName)
 	},
 }
 
@@ -328,6 +327,6 @@ var backupUpdateCmd = &cobra.Command{
 		}
 
 		stopFn()
-		fmt.Printf("BackupRequest '%s' updated successfully\n", name)
+		log.Infof("Successfully updated BackupRequest %s", backupRequestName)
 	},
 }
