@@ -35,6 +35,13 @@ This package contains source code for Command-Line Interface to [oiler-backup Ku
 ## Installation
 
 1. Run `make build`
-2. Move generated binary from `./bin` somewhere to `$PATH`.
+2. Move generated binary from `./bin` somewhere to `$PATH`
 3. Try `oiler --help`
 4. To cleanup run `make clean`
+
+## Configuration
+
+Configuration file is stored at `/home/${whoami}/.oiler/.config.json`.
+It must contain two records:
+- kube_config_path - Path to kubeconfig to login to cluster
+- namespace - System namespace, where oiler-backup Kubernetes Operator is deployed to

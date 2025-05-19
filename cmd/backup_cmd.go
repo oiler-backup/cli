@@ -31,10 +31,18 @@ var backupListCmd = &cobra.Command{
 	Short: "List all BackupRequest resources",
 	Long:  `List all BackupRequest resources in the cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		stopFn := startSpinner("[1/3] Preparing")
 		dynClient, err := getDynamicClient()
+		if err != nil {
+			stopFn()
+			log.Fatalf("Failed to get client: %v", err)
+		}
+		stopFn()
 
+		stopFn = startSpinner("[2/3] Getting BackupRequests")
 		list, err := dynClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
+			stopFn()
 			log.Fatalf("Failed to list BackupRequest resources: %v", err)
 		}
 
@@ -43,13 +51,18 @@ var backupListCmd = &cobra.Command{
 			var backupRequest backupv1.BackupRequest
 			jsonItem, err := item.MarshalJSON()
 			if err != nil {
+				stopFn()
 				log.Fatalf("Failed to unmarshal object: %v", err)
 			}
 			if err := json.Unmarshal(jsonItem, &backupRequest); err != nil {
+				stopFn()
 				log.Fatalf("Failed to unmarshal BackupRequest resource: %v", err)
 			}
 			backupRequests = append(backupRequests, backupRequest)
 		}
+		stopFn()
+
+		stopFn = startSpinner("[3/3] Generating results")
 		t := table.NewWriter()
 		t.SetOutputMirror(os.Stdout)
 		t.SetStyle(table.StyleLight)
@@ -58,8 +71,8 @@ var backupListCmd = &cobra.Command{
 			t.AppendRow(table.Row{i + 1, br.Name, br.Spec.DbSpec.URI, br.Spec.DbSpec.DbName, br.Spec.DbSpec.DbType, br.Spec.Schedule, br.Status.Status})
 			t.AppendSeparator()
 		}
-
 		t.AppendFooter(table.Row{"", "", "", "", "", "TOTAL", len(backupRequests)})
+		stopFn()
 		t.Render()
 	},
 }
@@ -85,19 +98,23 @@ var backupCreateCmd = &cobra.Command{
 	Short: "Create a BackupRequest",
 	Long:  `Create a BackupRequest in the specified namespace.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		stopFn := startSpinner("[1/3] Preparing")
 		dbRegex := regexp.MustCompile(`^(?P<dbType>[^@]+)@(?P<dbUri>[^:]+):(?P<dbPort>\d+)/(?P<dbName>.+)$`)
 		dbMatches := dbRegex.FindStringSubmatch(db)
 		if len(dbMatches) != 5 {
+			stopFn()
 			log.Fatalf("Invalid --db format. Use dbType@dbUri:dbPort/dbName")
 		}
 		dbType := dbMatches[1]
 		dbUri := dbMatches[2]
 		dbPort, err := strconv.Atoi(dbMatches[3])
 		if err != nil {
+			stopFn()
 			log.Fatalf("Port %s is not a valid integer", dbMatches[3])
 		}
 		dbName := dbMatches[4]
 
+		stopFn()
 		var dbUserInput, dbPassInput string
 		if dbUserStdin {
 			fmt.Print("Enter DB User: ")
@@ -122,7 +139,7 @@ var backupCreateCmd = &cobra.Command{
 		} else {
 			dbPassInput = dbPass
 		}
-
+		stopFn = startSpinner("[2/3] Preparing")
 		s3Regex := regexp.MustCompile(`^(?P<endpoint>[^/]+)/(?P<bucketName>.+)$`)
 		s3Matches := s3Regex.FindStringSubmatch(s3)
 		if len(s3Matches) != 3 {
@@ -142,6 +159,7 @@ var backupCreateCmd = &cobra.Command{
 			address = s3Endpoint
 		}
 
+		stopFn()
 		var s3AccessKeyInput, s3SecretKeyInput string
 		if s3AccessKeyStdin {
 			fmt.Print("Enter S3 Access Key: ")
@@ -166,7 +184,7 @@ var backupCreateCmd = &cobra.Command{
 		} else {
 			s3SecretKeyInput = s3SecretKey
 		}
-
+		stopFn = startSpinner("[3/3] Creating BackupRequest")
 		backupRequest := backupv1.BackupRequest{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "backup.oiler.backup/v1",
@@ -198,17 +216,22 @@ var backupCreateCmd = &cobra.Command{
 		}
 
 		dynClient, err := getDynamicClient()
-
+		if err != nil {
+			stopFn()
+			log.Fatalf("Failed to get client: %v", err)
+		}
 		unstructuredBackupRequest, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&backupRequest)
 		if err != nil {
+			stopFn()
 			log.Fatalf("Failed to convert BackupRequest to unstructured: %v", err)
 		}
 
 		_, err = dynClient.Resource(gvr).Create(context.TODO(), &unstructured.Unstructured{Object: unstructuredBackupRequest}, metav1.CreateOptions{})
 		if err != nil {
+			stopFn()
 			log.Fatalf("Failed to create BackupRequest resource: %v", err)
 		}
-
+		stopFn()
 		fmt.Printf("BackupRequest '%s' created successfully\n", backupRequestName)
 	},
 }
@@ -219,15 +242,24 @@ var backupDeleteCmd = &cobra.Command{
 	Long:  `Delete a BackupRequest in the specified namespace.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		stopFn := startSpinner("[1/2] Preparing")
 		name := args[0]
 
 		dynClient, err := getDynamicClient()
+		if err != nil {
+			stopFn()
+			log.Fatalf("Failed to get client: %v", err)
+		}
+		stopFn()
 
+		stopFn = startSpinner("[2/2] Deleting BackupRequest")
 		err = dynClient.Resource(gvr).Delete(context.TODO(), name, metav1.DeleteOptions{})
 		if err != nil {
+			stopFn()
 			log.Fatalf("Failed to delete BackupRequest resource: %v", err)
 		}
 
+		stopFn()
 		fmt.Printf("BackupRequest '%s' deleted successfully\n", name)
 	},
 }
@@ -238,11 +270,13 @@ var backupUpdateCmd = &cobra.Command{
 	Long:  `Update a field in a BackupRequest in the specified namespace.`,
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
+		stopFn := startSpinner("[1/3] Preparing")
 		name := args[0]
 		fieldValue := args[1]
 
 		parts := strings.SplitN(fieldValue, "=", 2)
 		if len(parts) != 2 {
+			stopFn()
 			log.Fatalf("Invalid argument format. Use <field>=<value>")
 		}
 
@@ -250,9 +284,16 @@ var backupUpdateCmd = &cobra.Command{
 		value := parts[1]
 
 		dynClient, err := getDynamicClient()
+		if err != nil {
+			stopFn()
+			log.Fatalf("Failed to get client: %v", err)
+		}
+		stopFn()
 
+		stopFn = startSpinner("[2/3] Getting BackupRequest")
 		backupRequest, err := dynClient.Resource(gvr).Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
+			stopFn()
 			log.Fatalf("Failed to get BackupRequest resource: %v", err)
 		}
 
@@ -260,11 +301,16 @@ var backupUpdateCmd = &cobra.Command{
 
 		fieldParts := strings.Split(field, ".")
 		if len(fieldParts) == 0 {
+			stopFn()
 			log.Fatalf("Invalid field format. Use <field>=<value>")
 		}
 
+		stopFn()
+
+		stopFn = startSpinner("[3/3] Updating BackupRequest")
 		err = k8s.UpdateField(unstructuredBackupRequest, fieldParts, value)
 		if err != nil {
+			stopFn()
 			log.Fatalf("Failed to update field: %v", err)
 		}
 
@@ -272,9 +318,11 @@ var backupUpdateCmd = &cobra.Command{
 
 		_, err = dynClient.Resource(gvr).Update(context.TODO(), updatedBackupRequest, metav1.UpdateOptions{})
 		if err != nil {
+			stopFn()
 			log.Fatalf("Failed to update BackupRequest resource: %v", err)
 		}
 
+		stopFn()
 		fmt.Printf("BackupRequest '%s' updated successfully\n", name)
 	},
 }
