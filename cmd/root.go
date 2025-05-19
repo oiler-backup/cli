@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -8,8 +9,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/oiler-backup/cli/internal/config"
+	backupv1 "github.com/oiler-backup/core/core/api/v1"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var cfg *config.Config
@@ -90,6 +98,67 @@ var configGetCmd = &cobra.Command{
 	},
 }
 
+var backupCmd = &cobra.Command{
+	Use:   "backup",
+	Short: "Manage backup resources",
+	Long:  `Manage backup resources in the cluster.`,
+}
+
+var backupListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List all BackupRequest resources",
+	Long:  `List all BackupRequest resources in the cluster.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		config, err := rest.InClusterConfig()
+		if err != nil {
+			config, err = clientcmd.BuildConfigFromFlags("", cfg.KubeConfigPath)
+			if err != nil {
+				log.Fatalf("Failed to create config: %v", err)
+			}
+		}
+
+		dynClient, err := dynamic.NewForConfig(config)
+		if err != nil {
+			log.Fatalf("Failed to create dynamic client: %v", err)
+		}
+
+		gvr := schema.GroupVersionResource{
+			Group:    backupv1.GroupVersion.Group,
+			Version:  backupv1.GroupVersion.Version,
+			Resource: "backuprequests",
+		}
+
+		list, err := dynClient.Resource(gvr).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			log.Fatalf("Failed to list BackupRequest resources: %v", err)
+		}
+
+		var backupRequests []backupv1.BackupRequest
+		for _, item := range list.Items {
+			var backupRequest backupv1.BackupRequest
+			jsonItem, err := item.MarshalJSON()
+			if err != nil {
+				log.Fatalf("Failed to unmarshal object: %v", err)
+			}
+			if err := json.Unmarshal(jsonItem, &backupRequest); err != nil {
+				log.Fatalf("Failed to unmarshal BackupRequest resource: %v", err)
+			}
+			backupRequests = append(backupRequests, backupRequest)
+		}
+		t := table.NewWriter()
+		t.SetOutputMirror(os.Stdout)
+		t.SetStyle(table.StyleLight)
+		t.AppendHeader(table.Row{"#", "BackupRequest Name", "Database URI", "Database Name", "Database Type", "Schedule"})
+		for i, br := range backupRequests {
+			t.AppendRow(table.Row{i + 1, br.Name, br.Spec.DbSpec.URI, br.Spec.DbSpec.DbName, br.Spec.DbSpec.DbType, br.Spec.Schedule})
+			t.AppendSeparator()
+		}
+
+		t.AppendFooter(table.Row{"", "", "", "", "TOTAL", len(backupRequests)})
+		t.Render()
+	},
+}
+
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("Error while executing command: %v", err)
@@ -105,5 +174,7 @@ func init() {
 
 	configCmd.AddCommand(configGetCmd)
 	configCmd.AddCommand(configSetCmd)
+	backupCmd.AddCommand(backupListCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(backupCmd)
 }
