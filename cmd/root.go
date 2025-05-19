@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"fmt"
-	"log"
-
 	"github.com/oiler-backup/cli/internal/config"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 const (
@@ -13,19 +11,18 @@ const (
 )
 
 var cfg *config.Config
+var log *zap.SugaredLogger
 
 // rootCmd is a top-level command
 var rootCmd = &cobra.Command{
 	Use:   "oiler-cli",
 	Short: "CLI for Oiler Kubernetes Operator",
 	Long:  `CLI tool to interact with Oiler Kubernetes Operator.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Oiler CLI is running")
-	},
 }
 
 // Execute executes incoming command
-func Execute() {
+func Execute(logger *zap.SugaredLogger) {
+	log = logger
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("Error while executing command: %v", err)
 	}

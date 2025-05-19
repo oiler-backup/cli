@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -61,7 +59,7 @@ var adapterAddCmd = &cobra.Command{
 				log.Fatalf("Failed to create ConfigMap: %v", err)
 			}
 			stopFn()
-			fmt.Printf("Created ConfigMap '%s' with entry '%s=%s'\n", CM_NAME, name, url)
+			log.Infof("Successfully created ConfigMap %s with entry %s=%s", CM_NAME, name, url)
 			return
 		}
 		stopFn()
@@ -75,7 +73,7 @@ var adapterAddCmd = &cobra.Command{
 			log.Fatalf("Failed to update ConfigMap: %v", err)
 		}
 		stopFn()
-		fmt.Printf("Updated ConfigMap '%s' with entry '%s=%s'\n", CM_NAME, name, url)
+		log.Infof("Successfully updated ConfigMap %s with entry %s=%s", CM_NAME, name, url)
 	},
 }
 
@@ -101,7 +99,7 @@ var adapterDeleteCmd = &cobra.Command{
 
 		if _, exists := configMap.Data[name]; !exists {
 			stopFn()
-			fmt.Printf("Entry '%s' not found in ConfigMap '%s'\n", name, CM_NAME)
+			log.Infof("Entry %s is not found in ConfigMap %s", name, CM_NAME)
 			return
 		}
 		stopFn()
@@ -116,7 +114,7 @@ var adapterDeleteCmd = &cobra.Command{
 		}
 
 		stopFn()
-		fmt.Printf("Deleted entry '%s' from ConfigMap '%s'\n", name, CM_NAME)
+		log.Infof("Successfully deleted entry %s from ConfigMap %s", name, CM_NAME)
 	},
 }
 
