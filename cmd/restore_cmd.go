@@ -19,18 +19,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// backupCmd is a top-level command for actions with BackupRequest.
-var backupCmd = &cobra.Command{
-	Use:   "backup",
-	Short: "Manage backup resources",
-	Long:  `Manage backup resources in the cluster.`,
+// restoreCmd is a top-level command for actions with BackupRestores.
+var restoreCmd = &cobra.Command{
+	Use:   "restore",
+	Short: "Manage restore resources",
+	Long:  `Manage restore resources in the cluster.`,
 }
 
-// backupListCmd lists all BackupRequest instances.
-var backupListCmd = &cobra.Command{
+// restoreListCmd lists all BackupRestore instances.
+var restoreListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all BackupRequest resources",
-	Long:  `List all BackupRequest resources in the cluster.`,
+	Short: "List all BackupRestore resources",
+	Long:  `List all BackupRestore resources in the cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		stopFn := startSpinner("[1/3] Preparing")
 		dynClient, err := getDynamicClient()
@@ -40,26 +40,26 @@ var backupListCmd = &cobra.Command{
 		}
 		stopFn()
 
-		stopFn = startSpinner("[2/3] Getting BackupRequests")
-		list, err := dynClient.Resource(brGvr).List(context.TODO(), metav1.ListOptions{})
+		stopFn = startSpinner("[2/3] Getting BackupRestores")
+		list, err := dynClient.Resource(rsGvr).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			stopFn()
-			log.Fatalf("Failed to list BackupRequest resources: %v", err)
+			log.Fatalf("Failed to list BackupRestore resources: %v", err)
 		}
 
-		var backupRequests []backupv1.BackupRequest
+		var backupRestores []backupv1.BackupRestore
 		for _, item := range list.Items {
-			var backupRequest backupv1.BackupRequest
+			var backupRestore backupv1.BackupRestore
 			jsonItem, err := item.MarshalJSON()
 			if err != nil {
 				stopFn()
 				log.Fatalf("Failed to unmarshal object: %v", err)
 			}
-			if err := json.Unmarshal(jsonItem, &backupRequest); err != nil {
+			if err := json.Unmarshal(jsonItem, &backupRestore); err != nil {
 				stopFn()
-				log.Fatalf("Failed to unmarshal BackupRequest resource: %v", err)
+				log.Fatalf("Failed to unmarshal BackupRestore resource: %v", err)
 			}
-			backupRequests = append(backupRequests, backupRequest)
+			backupRestores = append(backupRestores, backupRestore)
 		}
 		stopFn()
 
@@ -67,22 +67,22 @@ var backupListCmd = &cobra.Command{
 		t := table.NewWriter()
 		t.SetOutputMirror(os.Stdout)
 		t.SetStyle(table.StyleLight)
-		t.AppendHeader(table.Row{"#", "BackupRequest Name", "Database URI", "Database Name", "Database Type", "Schedule", "Status"})
-		for i, br := range backupRequests {
-			t.AppendRow(table.Row{i + 1, br.Name, br.Spec.DbSpec.URI, br.Spec.DbSpec.DbName, br.Spec.DbSpec.DbType, br.Spec.Schedule, br.Status.Status})
+		t.AppendHeader(table.Row{"#", "BackupRestore Name", "Database URI", "Database Name", "Database Type", "Revision", "Status"})
+		for i, br := range backupRestores {
+			t.AppendRow(table.Row{i + 1, br.Name, br.Spec.DbSpec.URI, br.Spec.DbSpec.DbName, br.Spec.DbSpec.DbType, br.Spec.BackupRevision, br.Status.Status})
 			t.AppendSeparator()
 		}
-		t.AppendFooter(table.Row{"", "", "", "", "", "TOTAL", len(backupRequests)})
+		t.AppendFooter(table.Row{"", "", "", "", "", "TOTAL", len(backupRestores)})
 		stopFn()
 		t.Render()
 	},
 }
 
-// backupCreateCmd creates BackupRequest instance.
-var backupCreateCmd = &cobra.Command{
+// restoreCreateCmd creates BackupRestore instance.
+var restoreCreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create a BackupRequest",
-	Long:  `Create a BackupRequest in the specified namespace.`,
+	Short: "Create a BackupRestore",
+	Long:  `Create a BackupRestore`,
 	Run: func(cmd *cobra.Command, args []string) {
 		stopFn := startSpinner("[1/3] Preparing")
 		dbRegex := regexp.MustCompile(`^(?P<dbType>[^@]+)@(?P<dbUri>[^:]+):(?P<dbPort>\d+)/(?P<dbName>.+)$`)
@@ -134,7 +134,6 @@ var backupCreateCmd = &cobra.Command{
 		s3Endpoint := s3Matches[1]
 		s3BucketName := s3Matches[2]
 
-		// Разделяем endpoint на протокол и адрес
 		endpointParts := strings.SplitN(s3Endpoint, "://", 2)
 		var protocol, address string
 		if len(endpointParts) == 2 {
@@ -170,16 +169,16 @@ var backupCreateCmd = &cobra.Command{
 		} else {
 			s3SecretKeyInput = s3SecretKey
 		}
-		stopFn = startSpinner("[3/3] Creating BackupRequest")
-		backupRequest := backupv1.BackupRequest{
+		stopFn = startSpinner("[3/3] Creating BackupRestore")
+		backupRestore := backupv1.BackupRestore{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "backup.oiler.backup/v1",
-				Kind:       "BackupRequest",
+				Kind:       "BackupRestore",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name: backupRequestName,
+				Name: backupRestoreName,
 			},
-			Spec: backupv1.BackupRequestSpec{
+			Spec: backupv1.BackupRestoreSpec{
 				DbSpec: backupv1.DatabaseSpec{
 					DbType: dbType,
 					URI:    dbUri,
@@ -196,8 +195,7 @@ var backupCreateCmd = &cobra.Command{
 						SecretKey: s3SecretKeyInput,
 					},
 				},
-				Schedule:       schedule,
-				MaxBackupCount: maxBackupCount,
+				BackupRevision: backupRevision,
 			},
 		}
 
@@ -206,27 +204,27 @@ var backupCreateCmd = &cobra.Command{
 			stopFn()
 			log.Fatalf("Failed to get client: %v", err)
 		}
-		unstructuredBackupRequest, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&backupRequest)
+		unstructuredBackupRestore, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&backupRestore)
 		if err != nil {
 			stopFn()
-			log.Fatalf("Failed to convert BackupRequest to unstructured: %v", err)
+			log.Fatalf("Failed to convert BackupRestore to unstructured: %v", err)
 		}
 
-		_, err = dynClient.Resource(brGvr).Create(context.TODO(), &unstructured.Unstructured{Object: unstructuredBackupRequest}, metav1.CreateOptions{})
+		_, err = dynClient.Resource(rsGvr).Create(context.TODO(), &unstructured.Unstructured{Object: unstructuredBackupRestore}, metav1.CreateOptions{})
 		if err != nil {
 			stopFn()
-			log.Fatalf("Failed to create BackupRequest resource: %v", err)
+			log.Fatalf("Failed to create BackupRestore resource: %v", err)
 		}
 		stopFn()
-		log.Infof("Successfully created BackupRequest %s", backupRequestName)
+		log.Infof("Successfully created BackupRestore %s", backupRestoreName)
 	},
 }
 
-// backupDeleteCmd deletes BackupRequest.
-var backupDeleteCmd = &cobra.Command{
+// restoreDeleteCmd deletes BackupRestore.
+var restoreDeleteCmd = &cobra.Command{
 	Use:   "delete <name>",
-	Short: "Delete a BackupRequest",
-	Long:  `Delete a BackupRequest in the specified namespace.`,
+	Short: "Delete a BackupRestore",
+	Long:  `Delete a BackupRestore`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		stopFn := startSpinner("[1/2] Preparing")
@@ -239,23 +237,23 @@ var backupDeleteCmd = &cobra.Command{
 		}
 		stopFn()
 
-		stopFn = startSpinner("[2/2] Deleting BackupRequest")
-		err = dynClient.Resource(brGvr).Delete(context.TODO(), name, metav1.DeleteOptions{})
+		stopFn = startSpinner("[2/2] Deleting BackupRestore")
+		err = dynClient.Resource(rsGvr).Delete(context.TODO(), name, metav1.DeleteOptions{})
 		if err != nil {
 			stopFn()
-			log.Fatalf("Failed to delete BackupRequest resource: %v", err)
+			log.Fatalf("Failed to delete BackupRestore resource: %v", err)
 		}
 
 		stopFn()
-		log.Infof("Successfully deleted BackupRequest %s", backupRequestName)
+		log.Infof("Successfully deleted BackupRestore %s", name)
 	},
 }
 
-// backupUpdateCmd updates existing BackupRequest.
-var backupUpdateCmd = &cobra.Command{
+// retoreUpdateCmd updates existing BackupRestore.
+var restoreUpdateCmd = &cobra.Command{
 	Use:   "update <name> <field>=<value>",
-	Short: "Update a field in a BackupRequest",
-	Long:  `Update a field in a BackupRequest in the specified namespace.`,
+	Short: "Update a field in a BackupRestore",
+	Long:  `Update a field in a BackupRestore`,
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		stopFn := startSpinner("[1/3] Preparing")
@@ -278,14 +276,14 @@ var backupUpdateCmd = &cobra.Command{
 		}
 		stopFn()
 
-		stopFn = startSpinner("[2/3] Getting BackupRequest")
-		backupRequest, err := dynClient.Resource(brGvr).Get(context.TODO(), name, metav1.GetOptions{})
+		stopFn = startSpinner("[2/3] Getting BackupRestore")
+		backupRestore, err := dynClient.Resource(rsGvr).Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
 			stopFn()
-			log.Fatalf("Failed to get BackupRequest resource: %v", err)
+			log.Fatalf("Failed to get BackupRestore resource: %v", err)
 		}
 
-		unstructuredBackupRequest := backupRequest.UnstructuredContent()
+		unstructuredBackupRestore := backupRestore.UnstructuredContent()
 
 		fieldParts := strings.Split(field, ".")
 		if len(fieldParts) == 0 {
@@ -295,22 +293,22 @@ var backupUpdateCmd = &cobra.Command{
 
 		stopFn()
 
-		stopFn = startSpinner("[3/3] Updating BackupRequest")
-		err = k8s.UpdateField(unstructuredBackupRequest, fieldParts, value)
+		stopFn = startSpinner("[3/3] Updating BackupRestore")
+		err = k8s.UpdateField(unstructuredBackupRestore, fieldParts, value)
 		if err != nil {
 			stopFn()
 			log.Fatalf("Failed to update field: %v", err)
 		}
 
-		updatedBackupRequest := &unstructured.Unstructured{Object: unstructuredBackupRequest}
+		updatedBackupRestore := &unstructured.Unstructured{Object: unstructuredBackupRestore}
 
-		_, err = dynClient.Resource(brGvr).Update(context.TODO(), updatedBackupRequest, metav1.UpdateOptions{})
+		_, err = dynClient.Resource(rsGvr).Update(context.TODO(), updatedBackupRestore, metav1.UpdateOptions{})
 		if err != nil {
 			stopFn()
-			log.Fatalf("Failed to update BackupRequest resource: %v", err)
+			log.Fatalf("Failed to update BackupRestore resource: %v", err)
 		}
 
 		stopFn()
-		log.Infof("Successfully updated BackupRequest %s", backupRequestName)
+		log.Infof("Successfully updated BackupRestore %s", name)
 	},
 }

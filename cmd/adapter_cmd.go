@@ -37,6 +37,10 @@ var adapterAddCmd = &cobra.Command{
 		url := parts[1]
 
 		clientset, err := getClientSet()
+		if err != nil {
+			stopFn()
+			log.Fatalf("Failed to create clientset: %v", err)
+		}
 
 		stopFn()
 
@@ -88,6 +92,10 @@ var adapterDeleteCmd = &cobra.Command{
 
 		stopFn := startSpinner("[1/3] Preparing")
 		clientset, err := getClientSet()
+		if err != nil {
+			stopFn()
+			log.Fatalf("Failed to create clientset: %v", err)
+		}
 
 		stopFn()
 		stopFn = startSpinner("[2/3] Getting config map")
@@ -126,6 +134,10 @@ var adapterListCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		stopFn := startSpinner("[1/3] Preparing")
 		clientset, err := getClientSet()
+		if err != nil {
+			stopFn()
+			log.Fatalf("Failed to create clientset: %v", err)
+		}
 		stopFn()
 
 		stopFn = startSpinner("[2/3] Getting config map")

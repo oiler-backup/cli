@@ -13,10 +13,34 @@ import (
 )
 
 var (
-	gvr = schema.GroupVersionResource{
+	db                string
+	dbUser            string
+	dbPass            string
+	dbUserStdin       bool
+	dbPassStdin       bool
+	s3                string
+	s3AccessKey       string
+	s3SecretKey       string
+	s3AccessKeyStdin  bool
+	s3SecretKeyStdin  bool
+	schedule          string
+	maxBackupCount    int64
+	backupRequestName string
+	backupRestoreName string
+	backupRevision    string
+)
+
+var (
+	brGvr = schema.GroupVersionResource{
 		Group:    backupv1.GroupVersion.Group,
 		Version:  backupv1.GroupVersion.Version,
 		Resource: "backuprequests",
+	}
+
+	rsGvr = schema.GroupVersionResource{
+		Group:    backupv1.GroupVersion.Group,
+		Version:  backupv1.GroupVersion.Version,
+		Resource: "backuprestores",
 	}
 )
 
