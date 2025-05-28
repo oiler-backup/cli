@@ -52,4 +52,10 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(backupCmd)
 	rootCmd.AddCommand(adapterCmd)
+
+	restoreCmd.AddCommand(restoreListCmd)
+	restoreCmd.AddCommand(restoreCreateCmd)
+	restoreCmd.AddCommand(restoreDeleteCmd)
+	restoreCmd.AddCommand(restoreUpdateCmd)
+	rootCmd.AddCommand(restoreCmd)
 }

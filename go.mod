@@ -6,7 +6,7 @@ require (
 	github.com/briandowns/spinner v1.23.2
 	github.com/jedib0t/go-pretty/v6 v6.6.7
 	github.com/oiler-backup/base v0.0.0-20250518222830-aa494a3782ae
-	github.com/oiler-backup/core/core v0.0.0-20250519022314-8afd68082730
+	github.com/oiler-backup/core/core v0.0.0-20250526213621-87bb851162d7
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	go.uber.org/zap v1.27.0
